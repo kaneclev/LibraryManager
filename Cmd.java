@@ -4,26 +4,20 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class Cmd {
-    // todo: trying to do a running stream like I did in project3.
-    //  the challenge is that the arguments I will be working with are going to be more extensive than in project 3
-    //  current goal:
-    //  get the in stream working so that i can interact with the library while the program is running
-    //
-
-    // currently creating commands that would only be available for an "admin"
     LibraryManager libMan;
     boolean isAdmin = false;
     Cmd(String[] fileLoc) {
-        // call the introduction 'explanation' first thing.
-
         libMan = new LibraryManager();
+        Scanner inStream = new Scanner(System.in);
+
+
         if(fileLoc.length == 1) {
             loadInitLibrary(fileLoc[0]);
         }
-        Scanner inStream = new Scanner(System.in);
-        boolean hasLoggedIn = login(inStream);
 
-        if(hasLoggedIn) {
+
+
+        if(login(inStream)) {
             explanation();
             while (inStream.hasNextLine()) {
                 String line = inStream.nextLine();
@@ -51,7 +45,7 @@ public class Cmd {
                                                 libMan.addNewBook(cleanedParams[0], cleanedParams[1], quantity, price, true);
                                             }
                                             else {
-                                                System.out.println("This command is for administrators only. ");
+                                                System.out.println("This command is for Useristrators only. ");
                                             }
                                         }
                                         break;
@@ -70,7 +64,7 @@ public class Cmd {
                                                 libMan.addBooks(cleanedParams[0], quantity);
                                             }
                                             else {
-                                                System.out.println("This command is for administrators only. ");
+                                                System.out.println("This command is for Useristrators only. ");
                                             }
                                         }
                                         break;
@@ -90,7 +84,7 @@ public class Cmd {
                                                 libMan.removeBook(cleanedParams[0], quantity);
                                             }
                                             else {
-                                                System.out.println("This command is for administrators only. ");
+                                                System.out.println("This command is for Useristrators only. ");
                                             }
                                         }
 
@@ -247,7 +241,7 @@ public class Cmd {
         System.out.println("We can store book objects which have an associated author, quantity, ID, and price.");
         System.out.println("Commands consist of an existed function, followed by a '()', where the parentheses");
         System.out.println("contain the required parameters. ");
-        System.out.println("For the list of possible commands, use the 'printCmd()' command.");
+        System.out.println("For the list of possible commands, use the 'commands()' command.");
         System.out.println("To repeat this message, use the 'explain()' command.");
         System.out.println("To exit the library, use the 'quit()' command. ");
         System.out.println("Thank you, and enjoy. ");
@@ -259,70 +253,68 @@ public class Cmd {
     }
 
     private boolean login(Scanner in) {
-        System.out.println("Are you logging in or creating a new account? (login/new)");
-        while(in.hasNextLine()) {
-            String line = in.nextLine();
-            if(line.length() > 0) {
-                //fixme: i think we need a switch statement.
-                try {
-                    switch(line) {
-                        case "login": //todo: for logging in as either a user or an admin.
-                            System.out.println("Are you logging in as a user or an admin? (user/admin)");
-                            line = in.nextLine();
-                            if(line.equals("admin")) {
-                                System.out.println("What is the username of the admin?");
-                                try {
-                                    String user = in.nextLine();
-                                    if(user.length() > 0) {
-                                        System.out.println("What is the password for '" + user + "'?");
-                                        String pass = in.nextLine();
-                                        if(pass.length() > 0) {
-                                            if(libMan.adminExists(user, pass)) {
-                                                System.out.println("Logged in... ");
-                                                isAdmin = true;
-                                                return true;
-                                            }
-                                        }
-                                    }
+      logInfo: while(true) {
+            System.out.println("Login Options (please choose 1, 2, or 3): ");
+            System.out.println("1.) Create a new account");
+            System.out.println("2.) Sign in to an existing account");
+            System.out.println("3.) Quit");
+            String choice = in.nextLine();
 
-                                } catch(Exception e) {
-                                    System.out.println("There was a problem at CMD[263]");
-                                }
-
-                            }
-                            break;
-                        case "new": // todo: for creating a new user.
-                            System.out.println("What would you like your username to be?");
-                            line = in.nextLine();
-
-                            break;
-                        case "override": // todo: override is for creating a new administrator.
-                            System.out.println("Now in override mode. What is the name of the new admin? ");
-                            String user = in.nextLine();
-                            // fixme: add more rules for creating a username/password
-                            if(user.length() > 0) {
-                                System.out.println("What is the password for the new admin? ");
-                                String pass = in.nextLine();
-                                if(pass.length() > 0) {
-                                    libMan.addAdmin(line, pass);
-                                    if (libMan.adminExists(line, line)) {
-                                        System.out.println("The admin account has been successfully created.");
-                                    }
-                                }
-                            }
-
-                        default:
-                            System.out.println("Please specify if you are logging in or making a new account.");
+             switch(choice) {
+                case "1":
+                    createAccount(in);
+                    return true;
+                case "2":
+                    if(signIn(in)) {
+                        return true;
                     }
-                } catch (IndexOutOfBoundsException e) {
-                    System.out.println("(ERROR CAUGHT)");
-                    System.out.println("There was an issue with the login process. ");
-                    return false;
-                }
+                    break;
+                 case "3":
+                     System.exit(0);
+                     break;
+                 default:
+                     System.out.println("Please enter a valid choice. ");
+             }
+        }
+    }
+
+    private void createAccount(Scanner in) {
+        String username;
+        String password;
+        while (true) {
+            System.out.println("New Account Username: ");
+            username = in.nextLine();
+            if (libMan.UserExists(username, "", false)) {
+                System.out.println("That username already exists. ");
+            } else {
+                System.out.println("New Account Password: ");
+                password = in.nextLine();
+                break;
             }
         }
+        libMan.addUser(username, password, false);
+    }
+    private boolean signIn(Scanner in) {
+        String username;
+        String password;
+        while(true) {
 
-        return false;
+            System.out.println("Username: ");
+            username = in.nextLine();
+            if(libMan.UserExists(username, "", false)) {
+                System.out.println("Password: ");
+                password = in.nextLine();
+                if(libMan.UserExists(username, password, true)) {
+                    return true;
+                }
+                else {
+                    System.out.println("That is the incorrect password. ");
+                }
+            }
+            else {
+                System.out.println("No such username exists.  ");
+                }
+            }
     }
 
 
