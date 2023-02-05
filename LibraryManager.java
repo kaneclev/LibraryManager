@@ -3,40 +3,43 @@ import java.util.HashMap;
 
 public class LibraryManager {
 
-    // need a way to store books in our library; think arraylist??
     HashMap<String, Book> hashLib;
     HashMap<String, ArrayList<String>> hashByAuthor;
     ArrayList<String> catalogueReferences;
-    HashMap<String, Admin> administrators;
+    HashMap<String, User> users;
     int id;
     LibraryManager() {
         hashLib = new HashMap<>();
         hashByAuthor = new HashMap<>();
         catalogueReferences = new ArrayList<>();
-        administrators = new HashMap<>();
+        users = new HashMap<>();
         id = 0;
+        addUser("kane", "..", true);
     }
-    // todo> start of admin methods
-    public void addAdmin(String user, String pass) {
-        administrators.put(user, new Admin(user, pass));
+    // todo> start of User methods
+
+    public void addUser(String user, String pass, boolean isAdmin) {
+        users.put(user, new User(user, pass, isAdmin));
+
     }
     // for login purposes; if administrator exists in hashmap, and the password is correct, return true;
-    public boolean adminExists(String user, String pass) {
-        if(administrators.containsKey(user)) {
-            if(administrators.get(user).isPassword(pass)) {
-                return true;
+    public boolean UserExists(String user, String pass, boolean isLogin) {
+        if(users.containsKey(user)) {
+            if(isLogin) { // if we are trying to log in we need to also get the password
+                if (users.get(user).isPassword(pass)) {
+                    return true;
+                } else {
+
+                    return false;
+                }
             }
             else {
-                System.out.println("That is the incorrect password. ");
-                return false;
+                return true;
             }
         }
-        else {
-            System.out.println("There is no such admin account. ");
-            return false;
-        }
+        return false;
     }
-    // todo: end of admin methods.
+    // todo: end of User methods.
 
     public void viewCatalogue() {
         for (String name : catalogueReferences) {
