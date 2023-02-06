@@ -1,13 +1,13 @@
-
+import java.io.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class Cmd {
     LibraryManager libMan;
-    boolean isAdmin = false;
+    private boolean isAdmin = false;
     Cmd(String[] fileLoc) {
-        libMan = new LibraryManager();
+        libMan = deserialize();
         Scanner inStream = new Scanner(System.in);
 
 
@@ -44,9 +44,6 @@ public class Cmd {
                                             if(isAdmin) {
                                                 libMan.addNewBook(cleanedParams[0], cleanedParams[1], quantity, price, true);
                                             }
-                                            else {
-                                                System.out.println("This command is for Useristrators only. ");
-                                            }
                                         }
                                         break;
                                     case "addBooks":
@@ -62,9 +59,6 @@ public class Cmd {
                                             }
                                             if(isAdmin) {
                                                 libMan.addBooks(cleanedParams[0], quantity);
-                                            }
-                                            else {
-                                                System.out.println("This command is for Useristrators only. ");
                                             }
                                         }
                                         break;
@@ -83,9 +77,7 @@ public class Cmd {
                                             if(isAdmin) {
                                                 libMan.removeBook(cleanedParams[0], quantity);
                                             }
-                                            else {
-                                                System.out.println("This command is for Useristrators only. ");
-                                            }
+
                                         }
 
                                         break;
@@ -108,8 +100,19 @@ public class Cmd {
 
                                         break;
 
-                                    case "test":
-                                        System.out.println("This test case passed.");
+                                    case "signBookOut":
+                                        cleanedParams = grabParams(line);
+                                        if(cleanedParams.length != 2) {
+                                            parameterWarning();
+                                        } else {
+                                            int quantity = 0;
+                                            try {
+                                                quantity = Integer.parseInt(cleanedParams[1]);
+                                                libMan.userBookSignOut(cleanedParams[0], quantity);
+                                            } catch (NumberFormatException err) {
+                                                parameterWarning();
+                                            }
+                                        }
                                         break;
                                     case "getBookPrice":
                                         cleanedParams = grabParams(line);
@@ -139,31 +142,54 @@ public class Cmd {
                                             libMan.getBookID(cleanedParams[0]);
                                         }
                                         break;
+                                    case "seeMyCatalogue":
+                                        libMan.seeUserCatalogue();
+                                        break;
 
                                     case "explain":
                                         explanation();
                                         break;
                                     case "commands":
-                                        System.out.println("Current working commands: ");
-                                        System.out.println("explain() -> explanation at beginning of program. ");
-                                        System.out.println("quit() -> shut down the library");
-                                        System.out.println("addNewBook(title, author, book-quantity, price)");
-                                        System.out.println("getAuthor(title) -> get the author of a book. ");
-                                        System.out.println("addBooks(title, num_books) -> increase the quantity " +
-                                                "of an existing book");
-                                        System.out.println("viewCatalogue() -> view the library's contents.");
-                                        System.out.println("getBookID(title) -> view the book ID of a book.");
-                                        System.out.println("getBookPrice(title) -> get the price of a book.");
-                                        System.out.println("searchByAuthor(author) -> returns all books written by " +
-                                                "specified author. ");
-                                        System.out.println("searchByTitle(title) -> returns book info on book");
-                                        System.out.println("removeBooks(title, quantity) -> removes quantity of a given " +
-                                                "book. ");
+                                        if (isAdmin) {
+                                            System.out.println("Current working commands: ");
+                                            System.out.println("explain() -> explanation at beginning of program. ");
+                                            System.out.println("quit() -> shut down the library");
+                                            System.out.println("seeMyCatalogue() -> lists the books you have currently " +
+                                                    "signed out. ");
+                                            System.out.println("signBookOut(title, copies) -> sign a book out");
+                                            System.out.println("addNewBook(title, author, book-quantity, price)");
+                                            System.out.println("getAuthor(title) -> get the author of a book. ");
+                                            System.out.println("addBooks(title, copies) -> increase the quantity " +
+                                                    "of an existing book");
+                                            System.out.println("viewCatalogue() -> view the library's contents.");
+                                            System.out.println("getBookID(title) -> view the book ID of a book.");
+                                            System.out.println("getBookPrice(title) -> get the price of a book.");
+                                            System.out.println("searchByAuthor(author) -> returns all books written by " +
+                                                    "specified author. ");
+                                            System.out.println("searchByTitle(title) -> returns book info on book");
+                                            System.out.println("removeBooks(title, quantity) -> removes quantity of a given " +
+                                                    "book. ");
+                                        }
+                                        else {
+                                            System.out.println("Current working commands: ");
+                                            System.out.println("explain() -> explanation at beginning of program. ");
+                                            System.out.println("quit() -> shut down the library");
+                                            System.out.println("seeMyCatalogue() -> lists the books you have currently " +
+                                                    "signed out. ");
+                                            System.out.println("signBookOut(title, copies) -> sign a book out");
+                                            System.out.println("getAuthor(title) -> get the author of a book. ");
+                                            System.out.println("viewCatalogue() -> view the library's contents.");
+                                            System.out.println("getBookID(title) -> view the book ID of a book.");
+                                            System.out.println("getBookPrice(title) -> get the price of a book.");
+                                            System.out.println("searchByAuthor(author) -> returns all books written by " +
+                                                    "specified author. ");
+                                            System.out.println("searchByTitle(title) -> returns book info on book");
+                                        }
                                         break;
 
                                     case "quit":
                                         System.out.println("Shutting down... ");
-                                        System.exit(0);
+                                        serializeAndQuit();
                                         break;
                                     default:
                                         System.err.println("No such command exists. Use commands() for a list of commands.");
@@ -188,7 +214,6 @@ public class Cmd {
             }
         }
     }
-    // CURRENTLY WORKS
     public void loadInitLibrary(String fileName) {
         try{
             Scanner fileInput = new Scanner(new File(fileName));
@@ -253,7 +278,7 @@ public class Cmd {
     }
 
     private boolean login(Scanner in) {
-      logInfo: while(true) {
+      while(true) {
             System.out.println("Login Options (please choose 1, 2, or 3): ");
             System.out.println("1.) Create a new account");
             System.out.println("2.) Sign in to an existing account");
@@ -270,7 +295,7 @@ public class Cmd {
                     }
                     break;
                  case "3":
-                     System.exit(0);
+                     serializeAndQuit();
                      break;
                  default:
                      System.out.println("Please enter a valid choice. ");
@@ -293,6 +318,9 @@ public class Cmd {
             }
         }
         libMan.addUser(username, password, false);
+        isAdmin = libMan.getPermissions(username);
+        libMan.setCurrUser(username);
+
     }
     private boolean signIn(Scanner in) {
         String username;
@@ -305,6 +333,8 @@ public class Cmd {
                 System.out.println("Password: ");
                 password = in.nextLine();
                 if(libMan.UserExists(username, password, true)) {
+                    isAdmin = libMan.getPermissions(username);
+                    libMan.setCurrUser(username);
                     return true;
                 }
                 else {
@@ -316,6 +346,23 @@ public class Cmd {
                 }
             }
     }
+
+    private void serializeAndQuit() {
+        libMan.serialize();
+        System.exit(0);
+    }
+
+    private LibraryManager deserialize() {
+        LibraryManager library = null;
+        try (FileInputStream fileIn = new FileInputStream("lib.ser");
+             ObjectInputStream in = new ObjectInputStream(fileIn)) {
+            library = (LibraryManager) in.readObject();
+        } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+        return library;
+    }
+
 
 
 
