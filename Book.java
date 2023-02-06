@@ -1,5 +1,9 @@
-public class Book {
+import java.io.Serial;
+import java.io.Serializable;
 
+public class Book implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private String author;
     private String bookName;
     private int bookID;
