@@ -1,12 +1,16 @@
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class LibraryManager {
+public class LibraryManager implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     HashMap<String, Book> hashLib;
     HashMap<String, ArrayList<String>> hashByAuthor;
     ArrayList<String> catalogueReferences;
     HashMap<String, User> users;
+    private User currUser; // for identifying who is currently using the library.
     int id;
     LibraryManager() {
         hashLib = new HashMap<>();
@@ -16,7 +20,48 @@ public class LibraryManager {
         id = 0;
         addUser("kane", "..", true);
     }
+    // todo: serialization methods
+    public HashMap<String, Book> getHashLib() {
+        return hashLib;
+    }
+    public HashMap<String, User> getUsers() {
+        return users;
+    }
+    public HashMap<String, ArrayList<String>> getHashByAuthor() {
+        return hashByAuthor;
+    }
+    public ArrayList<String> getCatalogueReferences() {
+        return catalogueReferences;
+    }
+    public ArrayList<Book> getCurrUserCatalogue() {
+        return currUser.getThisCatalogue();
+    }
+
+    public void serialize() {
+        try (FileOutputStream fileOut = new FileOutputStream("lib.ser");
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            out.writeObject(this);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+
     // todo> start of User methods
+    // method to set the current user session
+    public void setCurrUser(String username) {
+        currUser = users.get(username);
+    }
+
+
+    public boolean getPermissions(String username) {
+        if(users.get(username).isAdmin) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
     public void addUser(String user, String pass, boolean isAdmin) {
         users.put(user, new User(user, pass, isAdmin));
@@ -39,12 +84,33 @@ public class LibraryManager {
         }
         return false;
     }
+    public void seeUserCatalogue() {
+        currUser.seeMyCatalogue();
+    }
     // todo: end of User methods.
 
     public void viewCatalogue() {
         for (String name : catalogueReferences) {
             Book currBook = hashLib.get(name);
             getBookInfo(currBook);
+        }
+    }
+
+    public void userBookSignOut(String title, int copies) {
+        if (hashLib.containsKey(title)) {
+            if ((hashLib.get(title).getBookQuantity() - copies < 0)) {
+                // then someone wants to sign out more books than are available.
+                System.out.println("You have signed out the rest of the copies of the book: " + title);
+                currUser.addBookToUserCatalogue(hashLib.get(title), hashLib.get(title).getBookQuantity());
+                hashLib.get(title).setBookQuantity(0);
+            } else {
+                hashLib.get(title).setBookQuantity(hashLib.get(title).getBookQuantity() - copies);
+                currUser.addBookToUserCatalogue(hashLib.get(title), hashLib.get(title).getBookQuantity());
+                System.out.println("You have signed out " + copies + " copies of " + title);
+            }
+        }
+        else {
+            System.out.println("There is no such book in the catalogue.");
         }
     }
     public void addNewBook(String bookName, String author, int bookQuantity, int price, boolean alert) {
@@ -93,13 +159,14 @@ public class LibraryManager {
     //  could possibly change this later to remove the book object for memory's sake.
     public void removeBook(String bookName, int bookQuantity) {
         if(hashLib.containsKey(bookName)) {
-            if(hashLib.get(bookName).getBookQuantity() - bookQuantity < 0) {
+            if((hashLib.get(bookName).getBookQuantity() - bookQuantity < 0)) { // admin piece
                 System.out.println("There were not " + bookQuantity + " books left to remove for this title.");
                 System.out.println("There are now 0 '" + bookName + "' books left.");
                 hashLib.get(bookName).setBookQuantity(0);
             }
             else {
                 hashLib.get(bookName).setBookQuantity(hashLib.get(bookName).getBookQuantity() - bookQuantity);
+
             }
         }
         else {
