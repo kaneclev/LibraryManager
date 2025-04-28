@@ -1,5 +1,5 @@
 # LibraryManager
-Pseudo Library Manager (in progress 2/5/23)
+Pseudo Library Manager 
 
 This library manager keeps track of a catalogue of books that can be modified and searched through using a variety of specifications.
 Using a built in command prompt, the program recieves commands through standard input and has a variety of commands that include adding
